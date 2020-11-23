@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -16,8 +17,10 @@ import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotEmpty;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.formacionbdi.microservicios.commons.alumnos.models.entity.Alumno;
 import com.formacionbdi.microservicios.commons.examenes.models.entity.Examen;
 
@@ -35,7 +38,13 @@ public class Curso {
 	@Column(name="create_at")
 	private Date createAt;
 	
-	@OneToMany(fetch = FetchType.LAZY)
+	//Evitamos un bucle infinito cuando pedimos información a la tabla CursoAlumno (campo curso)
+	@JsonIgnoreProperties(value= {"curso"}, allowSetters = true)
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "curso", cascade = CascadeType.ALL, orphanRemoval = true)	
+	private List<CursoAlumno> cursoAlumnos;
+	
+	//@OneToMany(fetch = FetchType.LAZY) /* De cuando la tabla estaba en MySQL */
+	@Transient //Es un atributo que se rellena después (una vez se llame al otro microservicio)
 	private List<Alumno> alumnos;
 	
 	@ManyToMany(fetch = FetchType.LAZY)
@@ -50,6 +59,7 @@ public class Curso {
 	public Curso() {
 		this.alumnos = new ArrayList<>();
 		this.examenes = new ArrayList<>();
+		this.cursoAlumnos = new ArrayList<>();
 	}
 	
 	public Long getId() {
@@ -99,6 +109,14 @@ public class Curso {
 	public void setExamenes(List<Examen> examenes) {
 		this.examenes = examenes;
 	}
+	
+	public List<CursoAlumno> getCursoAlumnos() {
+		return cursoAlumnos;
+	}
+
+	public void setCursoAlumnos(List<CursoAlumno> cursoAlumnos) {
+		this.cursoAlumnos = cursoAlumnos;
+	}
 
 	public void addExamen(Examen examen) {
 		this.examenes.add(examen);
@@ -106,5 +124,13 @@ public class Curso {
 	
 	public void removeExamen(Examen examen) {
 		this.examenes.remove(examen);
+	}
+	
+	public void addCursoAlumno(CursoAlumno cursoAlumno) {
+		this.cursoAlumnos.add(cursoAlumno);
+	}
+	
+	public void removeCursoAlumno(CursoAlumno cursoAlumno) {
+		this.cursoAlumnos.remove(cursoAlumno);
 	}	
 }
