@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.persistence.CascadeType;
 import javax.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -26,6 +25,7 @@ import com.formacionbdi.microservicios.app.cursos.services.CursoService;
 
 @RestController
 public class CursoController extends CommonController<Curso, CursoService> {
+	
 	@PutMapping("/{id}")
 	public ResponseEntity<?> modificarCurso(@Valid @RequestBody Curso curso, BindingResult result, @PathVariable Long id) {
 		if (result.hasErrors()) {
