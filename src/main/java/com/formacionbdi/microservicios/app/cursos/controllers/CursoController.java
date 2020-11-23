@@ -20,10 +20,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.formacionbdi.microservicios.app.cursos.models.entity.Curso;
+import com.formacionbdi.microservicios.app.cursos.models.entity.CursoAlumno;
 import com.formacionbdi.microservicios.app.cursos.services.CursoService;
 
 @RestController
 public class CursoController extends CommonController<Curso, CursoService> {
+	
 	@PutMapping("/{id}")
 	public ResponseEntity<?> modificarCurso(@Valid @RequestBody Curso curso, BindingResult result, @PathVariable Long id) {
 		if (result.hasErrors()) {
@@ -47,7 +49,12 @@ public class CursoController extends CommonController<Curso, CursoService> {
 		}
 		Curso cursoDb = o.get();
 		for (Alumno a : alumnos) {
-			cursoDb.addAlumno(a);
+			//Añadimos a la tabla intermedia curso_alumno el nuevo alumno con su correspondiente curso.
+			CursoAlumno cursoAlumno = new CursoAlumno();
+			cursoAlumno.setAlumnoId(a.getId());			
+			cursoAlumno.setCurso(cursoDb);
+			//Relacionamos la tabla intermedia con la tabla curso añadiendo cursoAlumno al campo List cursoAlumnos.
+			cursoDb.addCursoAlumno(cursoAlumno);
 		}
 		return ResponseEntity.status(HttpStatus.CREATED).body(this.commonService.save(cursoDb));
 	}
@@ -59,12 +66,20 @@ public class CursoController extends CommonController<Curso, CursoService> {
 			return ResponseEntity.noContent().build();
 		}
 		Curso cursoDb = o.get();
-		cursoDb.removeAlumno(alumno);
+		CursoAlumno cursoAlumno = new CursoAlumno();
+		cursoAlumno.setAlumnoId(alumno.getId());
+		/*
+		 * Enviamos a eliminar el objeto cursoAlumno al objeto cursoDb a través del método removeCursoAlumno.
+		 * La clase Curso, gracias a 'cascade = CascadeType.ALL', notifica a la BBDD que debe eliminarse 
+		 * el valor del campo curso que se encuentra en la clase CursoAlumno.
+		 */
+		cursoDb.removeCursoAlumno(cursoAlumno);
+		
 		return ResponseEntity.status(HttpStatus.CREATED).body(this.commonService.save(cursoDb));
 	}
 	/*
-	 * Pedimos el curso por el id del alumno. Antes de que se nos devuelva dicho curso, éste se actualiza el curso con los 
-	 * exámenes realizados por ese alumno (en el caso de que los haya).
+	 * Pedimos el curso por el id del alumno. Antes de que se nos devuelva dicho curso, éste actualiza el curso 
+	 * con los exámenes realizados por ese alumno (en el caso de que los haya).
 	 */
 	@GetMapping("/alumno/{id}")
 	public ResponseEntity<?> buscarCursoPorAlumnoId(@PathVariable Long id) {
