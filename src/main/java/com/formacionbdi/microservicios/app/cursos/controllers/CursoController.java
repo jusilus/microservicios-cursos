@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -27,8 +29,11 @@ import com.formacionbdi.microservicios.app.cursos.services.CursoService;
 public class CursoController extends CommonController<Curso, CursoService> {
 
 	/* MÉTODOS GET */
-	
-	// Devuelve todos los cursos. Cada curso tiene una lista del tipo Alumno que sólo contienen el campo id.
+
+	/*
+	 * Devuelve todos los cursos. Cada curso tiene una lista del tipo Alumno donde
+	 * cada alumno sólo contienen el campo id.
+	 */
 	@GetMapping
 	@Override
 	public ResponseEntity<?> listar() {
@@ -43,9 +48,30 @@ public class CursoController extends CommonController<Curso, CursoService> {
 		return ResponseEntity.ok().body(cursos);
 	}
 
-	// Devuelve todos los Alumnos (con todos sus campos) del curso que se pide. La solicitud se hace a otro microservicio.
+	/*
+	 * Devuelve todos los cursos con paginación. Cada curso tiene una lista del tipo
+	 * Alumno donde cada alumno sólo contienen el campo id.
+	 */
+	@GetMapping("/pagina")
+	public ResponseEntity<?> listar(Pageable pageable) {
+		// Capturamos el objeto del tipo Page para poder manipular los datos (nº página,
+		// cursos por página, etc).
+		Page<Curso> cursos = commonService.findAll(pageable).map(c -> {
+			c.getCursoAlumnos().forEach(ca -> {
+				Alumno alumno = new Alumno();
+				alumno.setId(ca.getAlumnoId());
+				c.addAlumno(alumno);
+			});
+			return c;
+		});
+		return ResponseEntity.ok().body(cursos);
+	}
+
+	// Devuelve todos los Alumnos (con todos sus campos) del curso que se pide. La
+	// solicitud se hace a otro microservicio.
 	@GetMapping("/{id}")
-	public ResponseEntity<?> obtenerAlumnosPorId(@PathVariable Long id) {
+	@Override
+	public ResponseEntity<?> obtenerPorId(@PathVariable Long id) {
 		Optional<Curso> o = commonService.findById(id);
 		if (o.isEmpty()) {
 			return ResponseEntity.notFound().build();
@@ -56,12 +82,13 @@ public class CursoController extends CommonController<Curso, CursoService> {
 			List<Alumno> alumnos = (List<Alumno>) this.commonService.buscarAlumnosPorCurso(ids);
 			curso.setAlumnos(alumnos);
 		}
-		return ResponseEntity.ok().body(curso.getAlumnos());
+		return ResponseEntity.ok().body(curso);
 	}
 
 	/*
-	 * Pedimos el curso por el id del alumno. Antes de que se nos devuelva dicho curso, éste actualiza el curso 
-	 * con los exámenes realizados por ese alumno (en el caso de que los haya).
+	 * Pedimos el curso por el id del alumno. Antes de que se nos devuelva dicho
+	 * curso, éste actualiza el curso con los exámenes realizados por ese alumno (en
+	 * el caso de que los haya).
 	 */
 	@GetMapping("/alumno/{id}")
 	public ResponseEntity<?> buscarCursoPorAlumnoId(@PathVariable Long id) {
@@ -113,7 +140,7 @@ public class CursoController extends CommonController<Curso, CursoService> {
 		return ResponseEntity.status(HttpStatus.CREATED).body(this.commonService.save(cursoDb));
 	}
 
-	//Agrega alumnos al curso. 
+	// Agrega alumnos al curso.
 	@PutMapping("/{id}/asignar-alumnos")
 	public ResponseEntity<?> asignarAlumnosACurso(@RequestBody List<Alumno> alumnos, @PathVariable Long id) {
 		Optional<Curso> o = this.commonService.findById(id);
@@ -130,7 +157,7 @@ public class CursoController extends CommonController<Curso, CursoService> {
 		return ResponseEntity.status(HttpStatus.CREATED).body(this.commonService.save(cursoDb));
 	}
 
-	//Elimina el alumno del curso. 
+	// Elimina el alumno del curso.
 	@PutMapping("/{id}/eliminar-alumno")
 	public ResponseEntity<?> eliminarAlumnoDeCurso(@RequestBody Alumno alumno, @PathVariable Long id) {
 		Optional<Curso> o = this.commonService.findById(id);
@@ -151,7 +178,7 @@ public class CursoController extends CommonController<Curso, CursoService> {
 		return ResponseEntity.status(HttpStatus.CREATED).body(this.commonService.save(cursoDb));
 	}
 
-	//Agrega examenes al curso.
+	// Agrega examenes al curso.
 	@PutMapping("/{id}/asignar-examenes")
 	public ResponseEntity<?> asignarExamenAlCurso(@RequestBody List<Examen> examenes, @PathVariable Long id) {
 		Optional<Curso> o = this.commonService.findById(id);
@@ -163,7 +190,7 @@ public class CursoController extends CommonController<Curso, CursoService> {
 		return ResponseEntity.status(HttpStatus.CREATED).body(this.commonService.save(cursoDb));
 	}
 
-	//Elimina examenes del curso.
+	// Elimina examenes del curso.
 	@PutMapping("/{id}/eliminar-examen")
 	public ResponseEntity<?> eliminarExamenDelCurso(@RequestBody Examen examen, @PathVariable Long id) {
 		Optional<Curso> o = this.commonService.findById(id);
