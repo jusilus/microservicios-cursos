@@ -98,27 +98,29 @@ public class CursoController extends CommonController<Curso, CursoService> {
 			// Pedimos (request) mediante API REST los ids de los exámenes respondidos por
 			// este alumno.
 			List<Long> examenesIds = (List<Long>) this.commonService.obtenerExamenesIdsConRespuestasAlumno(id);
-			/*
-			 * Creamos una nueva lista del tipo Examen. Esta lista contendrá todos los
-			 * objetos Examen cuyos id's coincidan con la lista de examenes de este curso,
-			 * pero no se manipula nada del objeto curso.
-			 */
-			List<Examen> examenes = curso.getExamenes().stream().map(examen -> {
+			if(examenesIds != null && examenesIds.size() > 0) {
 				/*
-				 * Comprobamos si cada examen del curso ha sido respondido por el alumno. Si es
-				 * así lo establecemos como true en cada objeto Examen de la lista. Recordemos
-				 * que, llegados a este punto, no hemos manipulado el objeto curso en ningún
-				 * momento.
+				 * Creamos una nueva lista del tipo Examen. Esta lista contendrá todos los
+				 * objetos Examen cuyos id's coincidan con la lista de examenes de este curso,
+				 * pero no se manipula nada del objeto curso.
 				 */
-				if (examenesIds.contains(examen.getId())) {
-					examen.setRespondido(true);
-				}
-				// Devolvemos el examen para que sea devuelto en el stream final.
-				return examen;
-			}).collect(Collectors.toList());
-			// Ahora si guardamos (persistimos) los exámenes realizados por el alumno en el
-			// objeto curso.
-			curso.setExamenes(examenes);
+				List<Examen> examenes = curso.getExamenes().stream().map(examen -> {
+					/*
+					 * Comprobamos si cada examen del curso ha sido respondido por el alumno. Si es
+					 * así lo establecemos como true en cada objeto Examen de la lista. Recordemos
+					 * que, llegados a este punto, no hemos manipulado el objeto curso en ningún
+					 * momento.
+					 */
+					if (examenesIds.contains(examen.getId())) {
+						examen.setRespondido(true);
+					}
+					// Devolvemos el examen para que sea devuelto en el stream final.
+					return examen;
+				}).collect(Collectors.toList());
+				// Ahora si guardamos (persistimos) los exámenes realizados por el alumno en el
+				// objeto curso.
+				curso.setExamenes(examenes);
+			}			
 		}
 		return ResponseEntity.ok(curso);
 	}
